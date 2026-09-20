@@ -15,8 +15,21 @@
 | `logo-wood-colour` | 完整版，含底部那行小字。注意这行字离主体很远，图会又高又窄 |
 | `logo-wood-colour-whitebg` | 白底方图 1:1。用于头像、朋友圈、产品主图 |
 | `logo-wood-1colour-compact` | 单色版。丝印、烫金、刺绣、纸箱唛头、传真 |
+| `logo-black-compact` | **纯黑白版**。木纹是真镂空，没有颜色也能看出是木脚 |
+| `logo-white-for-dark-bg-compact` | 纯白版，深色背景 / 深色包装 / 黑底名片上用 |
 | `logo-1colour-recolourable-compact` | **要在 Canva 里换颜色就用这个**，见下 |
 | `mark-wood-colour` | 只有木脚图形，没有文字。做水印、角标、包装花纹 |
+
+以上每个都还有一个不带 `-compact` 的完整版，区别只是多了底部那行 CHINA / WORLDWIDE SUPPLY。
+
+## 纯黑白版说明
+
+`logo-black` 和 `logo-white-for-dark-bg` 是真正的黑白，整个 logo（含书法和英文）都是一个颜色。
+木纹做成了**镂空**，不是画上去的白线，所以：
+
+- 黑白传真、复印、报关单、说明书内页都能用
+- 激光雕刻、丝印、烫金、模切可以直接拿去开版
+- 在 Canva 里点一下就能整体换成任意颜色
 
 ## 在 Canva 里换整体颜色
 

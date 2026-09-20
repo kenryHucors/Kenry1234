@@ -84,10 +84,19 @@ if __name__ == "__main__":
         size = trim(p) if not kw["background"] else Image.open(p).size
         print(f"{name:28s} svg + png {size[0]}x{size[1]}")
 
-    for nm, ft in (("logo-1colour-recolourable", True),
-                   ("logo-1colour-recolourable-compact", False)):
-        flat = flatten_one_colour(footer=ft)
+    MONO = [
+        ("logo-1colour-recolourable",         "#3F1A08", True),
+        ("logo-1colour-recolourable-compact", "#3F1A08", False),
+        # true black and white - the grain is a real hole, so the wooden leg
+        # still reads with no colour at all
+        ("logo-black",                        "#000000", True),
+        ("logo-black-compact",                "#000000", False),
+        ("logo-white-for-dark-bg",            "#FFFFFF", True),
+        ("logo-white-for-dark-bg-compact",    "#FFFFFF", False),
+    ]
+    for nm, col, ft in MONO:
+        flat = flatten_one_colour(colour=col, footer=ft)
         open(os.path.join(PACK, nm + ".svg"), "w").write(flat)
         p = os.path.join(PACK, nm + ".png")
         png(flat, p, 4000)
-        print(f"{nm:28s} svg + png", trim(p))
+        print(f"{nm:34s} svg + png", trim(p))

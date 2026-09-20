@@ -128,7 +128,7 @@ def grain_svg(colour, opacity, width, lines, rings, figures):
     s.append(f'<g fill="none" stroke="{colour}" stroke-opacity="{min(1.0, opacity*1.6):.2f}" '
              f'stroke-width="{width*1.2:.2f}" stroke-linecap="round">')
     for y in rings:
-        s.append(f'<path d="M {CX-hw(y)+1.5:.2f} {y:.2f} L {CX+hw(y)-1.5:.2f} {y:.2f}"/>')
+        s.append(f'<path d="M {CX-hw(y)+2.5:.2f} {y:.2f} L {CX+hw(y)-2.5:.2f} {y:.2f}"/>')
     s.append("</g>")
     return "\n".join(s)
 
@@ -147,7 +147,7 @@ WOOD_GRADIENT = '''<linearGradient id="wood" x1="447" y1="0" x2="553" y2="0" gra
   <stop offset="1.00" stop-color="#452409"/>
  </linearGradient>'''
 
-def build(colour=True, background=True, mark_only=False):
+def build(colour=True, background=True, mark_only=False, canva=False, footer=True):
     d = outline()
     if colour:
         leg_fill = "url(#wood)"
@@ -158,19 +158,24 @@ def build(colour=True, background=True, mark_only=False):
         g = grain_svg("#FFFFFF", 0.95, 3.2, GRAINS_FLAT, RINGS_FLAT, ())
         edge = ""
 
+    wrap = '<g>' if canva else '<g clip-path="url(#lc)">'
     body = (f'{group(*BAND, "band", DARK)}\n'
             f'<g><path d="{d}" fill="{leg_fill}"/>'
-            f'<g clip-path="url(#lc)">{g}</g>{edge}</g>')
+            f'{wrap}{g}</g>{edge}</g>')
     if not mark_only:
         body += (f'\n{group(*CN, "cn", "#111111", SHIFT)}'
-                 f'\n{group(*TAG, "tag", "#111111", SHIFT)}'
-                 f'\n{group(*FOOT, "foot", "#111111")}')
+                 f'\n{group(*TAG, "tag", "#111111", SHIFT)}')
+        if footer:
+            body += f'\n{group(*FOOT, "foot", "#111111")}'
 
     vb = "332 146 336 375" if mark_only else "0 0 1000 1000"
+    _, _, vw, vh = (float(v) for v in vb.split())
     bg = ('<rect x="-10" y="-10" width="1100" height="1100" fill="#FFFFFF"/>'
           if background else "")
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{vb}">\n'
-            f'<defs>\n {WOOD_GRADIENT}\n <clipPath id="lc"><path d="{d}"/></clipPath>\n</defs>\n'
+    clip = "" if canva else f'\n <clipPath id="lc"><path d="{d}"/></clipPath>'
+    size = f' width="{vw:g}" height="{vh:g}"'
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{vb}"{size}>\n'
+            f'<defs>\n {WOOD_GRADIENT}{clip}\n</defs>\n'
             f'{bg}\n{body}\n</svg>\n')
 
 # ------------------------------------------------------------------ outputs

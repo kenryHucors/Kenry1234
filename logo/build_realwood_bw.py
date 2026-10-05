@@ -2,18 +2,19 @@
 """
 Black-and-white versions of the realistic wood-grain logo.
 
-  * GRAY  - the photographic leg desaturated, like a black-and-white photo.
+Both are FLAT: no lighting, no shadow, no highlight - the leg is one even
+tone and only the wood grain changes.
+
+  * GRAY  - flat grayscale wood grain.
             For black-and-white printing, newspapers, single-ink catalogues.
-  * BW    - pure 1-bit, woodcut / engraving style. The white grain lines follow
-            the SAME growth-ring field as the colour version, and their width
-            follows the lighting (wide on the lit side, thin in shadow), so the
-            leg keeps its turned 3D form with only black and white.
+  * BW    - pure 1-bit: a black leg with white grain lines of one constant
+            width, from the same growth-ring turbulence as the colour version.
             Traced to a single-colour vector: screen print, hot-foil, laser
             engraving, stamps, carton printing, and one-click recolour in Canva.
 """
 import importlib.util, io, os, re, subprocess, sys
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 import cairosvg
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -29,29 +30,29 @@ COLOUR_LEG = rw.LEG_IMG
 
 # ------------------------------------------------------------ grayscale leg
 def gray_leg():
-    a = np.asarray(COLOUR_LEG).astype(np.float32)
-    g = 0.299 * a[..., 0] + 0.587 * a[..., 1] + 0.114 * a[..., 2]
-    g = np.clip((g - 18) * 1.30, 0, 255)                 # wood is mid-dark: open it up
-    out = np.dstack([g, g, g, a[..., 3]]).astype(np.uint8)
+    """Flat grayscale: grain only, no light, no shadow, no highlight."""
+    lum, groove, a = F["lum_flat"], F["groove"], F["a"]
+    g = np.clip((lum - 18) * 1.30, 0, 255)
+    g *= 1 - 0.55 * np.clip(groove, 0, 1)               # turned grooves as plain dark lines
+    out = np.dstack([g, g, g, a * 255]).astype(np.uint8)
     return Image.fromarray(out, "RGBA")
 
 # ------------------------------------------------------ 1-bit engraving leg
 def engraved_leg():
-    t, spacing, shade, groove, inside, a, Y, cz = (
-        F[k] for k in ("t", "spacing", "shade", "groove", "inside", "a", "Y", "cz"))
-    b = np.clip((shade - 0.30) / 0.80, 0, 1)            # 0 = shadow, 1 = highlight
-    # woodcut: mostly black, thin white grain lines that widen in the light and
-    # fade out toward the sides, so the sides go solid black like a shaded cylinder
-    width = (0.05 + 0.24 * b) * np.clip(cz * 1.25, 0, 1) ** 1.6
-    width = np.where(width * spacing < 0.40, 0, width)   # drop lines too thin to print
-    grain = t < width
-    # turned details (chamfer + collar bead, foot) carry a clean highlight, not rings
-    detail = ((Y > 247) & (Y < 273)) | ((Y > 457) & (Y < 481))
-    highlight = (b > 0.93) & (cz > 0.45)                 # a thin glint, like a lacquered ring
-    white = np.where(detail, highlight, grain)
-    white &= inside > 1.6 * S                            # solid black rim keeps the silhouette
-    white &= (bl.BOT - Y) > 1.6                          # ... and along the flat foot
-    white &= groove < 0.30                               # turned grooves stay black
+    """Flat 1-bit: black leg, white grain lines of one constant width everywhere.
+    No light, no shadow, no glints - only the grain and the turned grooves."""
+    t, groove, inside, a, Y = (F[k] for k in ("t_flat", "groove", "inside", "a", "Y"))
+    # turned parts (top block, collar bead, foot) are solid with the grooves as
+    # thin white lines of one width; the tapered body carries the grain
+    turned = (Y < 273) | (Y > 457)
+    grain = (t < 0.24) & (groove < 0.30)                 # every ring, same width
+    white = np.where(turned, groove > 0.45, grain)
+    white &= inside > 1.4 * S                            # thin solid rim keeps the silhouette
+    white &= (bl.BOT - Y) > 1.4                          # ... and along the flat foot
+    # morphological opening: drop white slivers too thin to print cleanly
+    m = Image.fromarray(((white & ~turned) * 255).astype(np.uint8), "L")
+    m = m.filter(ImageFilter.MinFilter(5)).filter(ImageFilter.MaxFilter(5))
+    white = (np.asarray(m) > 127) | (white & turned)
     ink = (a > 0.5) & ~white
     out = np.zeros(ink.shape + (4,), np.uint8)
     out[..., 3] = np.where(ink, 255, 0)

@@ -75,7 +75,8 @@ def render_leg():
 
     # --- growth rings: pith behind the blank, drifting so rings break the surface
     # turbulence is long and gentle: real grain flows, it does not jitter
-    turb = fbm(H, W, 160 * S, 26 * S, 3) + 0.25 * fbm(H, W, 40 * S, 6 * S, 2)
+    turb_lo = fbm(H, W, 160 * S, 26 * S, 3)
+    turb = turb_lo + 0.25 * fbm(H, W, 40 * S, 6 * S, 2)
     px = 6.0 + 4.0 * np.sin((Y - bl.TOP) / 150.0)
     pz = -170.0 + 0.11 * (Y - bl.TOP)                     # slight run-out -> a few arches
     dist = np.sqrt((dx - px) ** 2 + (Z - pz) ** 2) + 2.4 * turb
@@ -93,6 +94,15 @@ def render_leg():
     base = EARLY[None, None] * (1 - late[..., None] * 0.62) + LATE[None, None] * (late[..., None] * 0.62)
     base *= tone[..., None]
     base *= (1 - 0.28 * pores[..., None])
+
+    # --- flat field for the no-lighting black & white builds: the grain as if the
+    # leg were cut face-on from a board, so rings do not bunch up (darken) toward
+    # the silhouette and nothing depends on light
+    Df = 70.0 - 0.11 * (Y - bl.TOP)
+    t_flat = np.mod((np.sqrt((dx - px) ** 2 + Df ** 2) + 2.4 * turb_lo) / spacing, 1.0)
+    late_f = (sstep(0.30, 0.88, t_flat) * (1 - sstep(0.93, 1.0, t_flat))) ** 1.2
+    lum = lambda c: 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]
+    lum_flat = (lum(EARLY) * (1 - 0.62 * late_f) + lum(LATE) * 0.62 * late_f) * (1 - 0.28 * pores)
 
     # --- lighting from the real surface-of-revolution normal
     N = np.stack([n, -DR, cz], -1)
@@ -119,7 +129,7 @@ def render_leg():
     a = np.clip(inside + 0.5, 0, 1)
     a *= np.clip((bl.BOT - Y) * S + 0.5, 0, 1)
     a *= np.clip((Y - bl.TOP) * S + 0.5, 0, 1)
-    FIELDS.update(t=t, spacing=spacing, shade=shade, groove=groove, inside=inside, a=a, Y=Y, cz=cz)
+    FIELDS.update(t_flat=t_flat, lum_flat=lum_flat, t=t, spacing=spacing, shade=shade, groove=groove, inside=inside, a=a, Y=Y, cz=cz)
     rgba = np.dstack([col, a * 255]).astype(np.uint8)
     return Image.fromarray(rgba, "RGBA"), x0u, y0u
 

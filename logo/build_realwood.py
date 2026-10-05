@@ -53,6 +53,8 @@ def sstep(a, b, x):
     return t * t * (3 - 2 * t)
 
 # ---------------------------------------------------------------- the leg
+FIELDS = {}                             # ring phase, lighting etc. for the B&W builds
+
 def render_leg():
     """Returns (RGBA image, x0, y0) with x0/y0 in logo units."""
     x0u, x1u = bl.CX - 56, bl.CX + 56
@@ -117,6 +119,7 @@ def render_leg():
     a = np.clip(inside + 0.5, 0, 1)
     a *= np.clip((bl.BOT - Y) * S + 0.5, 0, 1)
     a *= np.clip((Y - bl.TOP) * S + 0.5, 0, 1)
+    FIELDS.update(t=t, spacing=spacing, shade=shade, groove=groove, inside=inside, a=a, Y=Y, cz=cz)
     rgba = np.dstack([col, a * 255]).astype(np.uint8)
     return Image.fromarray(rgba, "RGBA"), x0u, y0u
 
